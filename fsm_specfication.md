@@ -6,9 +6,9 @@ stateDiagram-v2
 
     INIT --> WAITING_FOR_PLAYERS : Server starts
 
-    WAITING_FOR_PLAYERS --> SHIP_PLACEMENT : Players connected
+    WAITING_FOR_PLAYERS --> SHIP_PLACEMENT : Two players connected
 
-    SHIP_PLACEMENT --> GAME_START : Place valid fleets
+    SHIP_PLACEMENT --> GAME_START : Both players place valid fleets
 
     GAME_START --> PLAYER_TURN : Player 1 starts
 
@@ -25,22 +25,3 @@ stateDiagram-v2
     GAME_OVER --> CLEANUP : Winner announced
 
     CLEANUP --> WAITING_FOR_PLAYERS : Reset for new game
-
-## State Descriptions
-
-- `INIT` - Server starts and prepares the game.
-- `WAITING_FOR_PLAYERS` - Server waits until two players connect.
-- `SHIP_PLACEMENT` - Both players place their ships.
-- `GAME_START` - Server assigns Player 1 and Player 2 and starts the game.
-- `PLAYER_TURN` - Server waits for the active player to make a move.
-- `EVALUATE_MOVE` - Server checks whether the move is valid, a hit, a miss, or wins the game.
-- `GAME_OVER` - Server announces the winner or a win by forfeit.
-- `CLEANUP` - Server resets game data and prepares for another game.
-
-## Error Handling
-
-If a player sends an invalid coordinate, repeats an attack, or moves out of turn, the server sends an `ERROR` message and stays in the current turn.
-
-If a player disconnects during the game, the other player wins by forfeit and the server moves to `GAME_OVER`.
-
-If a player disconnects before the game begins, the server returns to `WAITING_FOR_PLAYERS`.
