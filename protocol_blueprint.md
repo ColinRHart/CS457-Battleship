@@ -1,6 +1,6 @@
 # Battleship Protocol Blueprint
 
-##Transport
+## Transport
 
 - Protocol: TCP
 - Format: JSON
@@ -10,7 +10,7 @@ TCP sends data as a stream, so messages may arrive together or in pieces. The re
 
 ---
 
-##Message Types
+## Message Types
 1. `CONNECT`
 2. `LOBBY_WAIT`
 3. `GAME_START`
@@ -23,10 +23,15 @@ TCP sends data as a stream, so messages may arrive together or in pieces. The re
 
 ### CONNECT
 Client -> Server
-
+Used when a player joins the game.
+**Fields:**
+- `msg_type` - String
+- `player_id` - String
 Used when a player joins the game.
 
+**Example:**
 ```json
+
   {
   "msg_type": "CONNECT",
   "player_id": "Player_1"
