@@ -19,6 +19,11 @@
 7. Player 1 takes the first turn, and the game continues until someone wins or disconnects.
 8. After the game ends, the server closes the player connections and resets for another game.
 
+During ship placement, the server will check that each ship is placed within the 10x10 board.
+It will also make sure ships do not overlap and that each ship has the correct length and direction.
+If a ship is placed incorrectly, the server sends an `ERROR` message and the player must try again.
+The game will not start until both players have placed all five ships correctly.
+
 The server will only allow two players in a game. Any extra connections will be rejected.
 
 ### 1.2 Handling Messages
@@ -55,6 +60,8 @@ For example, when a player attacks:
   8. The server releases the lock.
 If the move is invalid, the server will send an `ERROR` message without changing the game.
 The server will release the lock before sending messages to players so one slow connection does not hold up the whole game.
+The lock will also be used when players are placing ships. When a player sends `PLACE_SHIP`, the server will lock the game information and check the ship's starting location, direction, length, and whether it overlaps another ship. If the placement is valid, the server saves it to the player's board. If it is invalid, the board will not change and the server will send an `ERROR` message.
+The server will also use the lock when a player disconnects so the game state and connected player information can be updated safely.
 
 ### 2.3 Preventing Race Conditions
 -A race condition happens when two threads try to change the same information at the same time.
@@ -90,6 +97,7 @@ After each valid move, the server will send a `STATE_UPDATE` message to both cli
 -Each player will be able to see their own board and the locations they have already attacked on the enemy board.
 -The server will not show a player's hidden ship locations to their opponent.
 -Both players will receive updates from the same server game state. The server will send the updates in the correct order so the clients stay synchronized.
+The server will prepare each `STATE_UPDATE` while holding the game lock and assign updates in the order the moves are processed. Outgoing messages for each client will be sent in that same order. This prevents one player's thread from sending an older update after a newer one.
 -When a player sinks all five enemy ships, the server will send `GAME_OVER` with the winner and final scores.
 
 ## 5. Disconnect Handling
@@ -106,6 +114,7 @@ A player might also lose connection because of a network problem or because thei
 The server will check for an empty response from `recv()`, which means the connection has closed.
 It will also handle socket errors such as `ConnectionResetError` and `BrokenPipeError`.
 If this happens during a game, the server will end the match and give the remaining player a win by forfeit.
+The server will also handle `TimeoutError` when a timeout is configured. These errors will trigger the same disconnect handling process without crashing the server.
 
 ### 5.3 Server Cleanup
 
@@ -117,6 +126,14 @@ After a game ends, the server will:
   5. Return to waiting for two new players.
 This allows the server to run another game without needing to restart.
 
+### 5.4 Disconnects Before the Game Starts
+Players might disconnect while waiting for another player or while placing their ships.
+-If a player disconnects while waiting in the lobby, the server will remove them and continue waiting for another player.
+-If a player disconnects during ship placement, the server will cancel the current setup and return the remaining player to the waiting state.
+-Any ships that were already placed will be cleared so the next game starts with empty boards.
+-The remaining player will be notified when possible.
+The server will use the same cleanup process for normal disconnects and unexpected connection losses.
+
 ## 6. Connection to Sprint 1
 This design will follow the protocol and FSM created in Sprint 1.
 The server will continue using:
@@ -124,5 +141,6 @@ The server will continue using:
 - JSON messages ending with `\n`.
 - The same message types, including `CONNECT`, `PLACE_SHIP`, `MOVE`, `STATE_UPDATE`, `ERROR`, `DISCONNECT`, and `GAME_OVER`.
 - The same game states, including `WAITING_FOR_PLAYERS`, `SHIP_PLACEMENT`, `PLAYER_TURN`, `EVALUATE_MOVE`, `GAME_OVER`, and `CLEANUP`.
+The server will also follow the updated FSM rules for invalid ship placements, invalid attacks, and player disconnections. Invalid actions will return an `ERROR` message without changing the game state. If a player disconnects, the server will follow the correct transition depending on whether the game is waiting for players, placing ships, or already in progress.
 The main goal of this design is to allow two players to play Battleship at the same time without causing errors in the game state.
 The next document, `sequence_diagram.md`, will show how messages move between the two players and the server.
