@@ -15,3 +15,6 @@ AI rules(must do):
 - Reject invalid moves and out-of-turn moves with an `ERROR` message.
 - Handle client disconnects without crashing the server.
 - Do not assume one `recv()` call contains exactly one full message.
+- Validate ship placement, including boundaries, ship length, and overlapping ships. Return `ERROR` for invalid placements.
+- Handle disconnects during the lobby, ship placement, and gameplay according to the FSM.
+- Use `threading.Lock` when accessing or changing shared game information.
