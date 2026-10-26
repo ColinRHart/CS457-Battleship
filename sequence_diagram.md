@@ -21,6 +21,11 @@ sequenceDiagram
     participant S as Battleship Server
     actor P2 as Player 2
 
+    P1->>S: PLACE_SHIP - Ship and coordinates
+    S-->>P1: ERROR - If placement is invalid
+    P2->>S: PLACE_SHIP - Ship and coordinates
+    Note over S: Validate ships, boundaries, and overlap
+
     Note over P1,P2: Both players have placed their ships
 
     S-->>P1: GAME_START - Player 1 goes first
@@ -58,6 +63,12 @@ sequenceDiagram
         Note over S: Do not change board or turn
         Note over S: Unlock game information
         S-->>P1: ERROR - Invalid move or not your turn
+    end
+
+    opt Player Disconnects During Game
+        P2->>S: DISCONNECT or connection lost
+        Note over S: End game and record forfeit
+        S-->>P1: GAME_OVER - Player 1 wins by forfeit
     end
 ```
 
